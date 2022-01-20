@@ -13,7 +13,7 @@
 
 
 // Comment this out to disable prints and save space
-//#define BLYNK_PRINT SwSerial
+#define BLYNK_PRINT SwSerial
 
 
 #include <SoftwareSerial.h>
@@ -104,8 +104,8 @@ int CURRENT_END = 0;
 int NEXT_SEAT = 0;
 int NEXT_END = 0;
 
-//int players[8] = {1, 2};
-//int players[] = {shanko,sael,kae,tree,gith,otadus,monster1,monster2};
+int CURRENT_PLAYER = 0;
+int NEXT_PLAYER = 0;
 
 #define SEAT_ONE 0
 #define SEAT_TWO 3
@@ -136,7 +136,9 @@ Player player[] = {
   {"gith", 0},
   {"otadus", 0},
   {"monster1", 0},
-  {"monster2", 0}
+  {"monster2", 0},
+  {"monster3", 0},
+  {"monster4", 0}
 };
 
 //Need a clear all
@@ -165,45 +167,249 @@ void clearCurrent(int start, int leds) {
   strip.fill(0, start, leds);
 }
 
-int cmpfunc (const void * a, const void * b) {
-      return ( *(int*)a - *(int*)b );
+
+int compare (const void * a, const void * b)
+{
+
+  Player *orderA = (Player *)a;
+  Player *orderB = (Player *)b;
+
+  return ( orderB->value - orderA->value );
 }
 
+void setCurrentPlayer(int currentPlayer) {
 
-char outputSort;
+  CURRENT_PLAYER = currentPlayer;
+  Blynk.virtualWrite(V30, player[currentPlayer].name);
+  
+  if( strcmp(player[currentPlayer].name, "shanko") == 0 )
+  {
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_ONE;
+    CURRENT_END = END_ONE;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  } else if( strcmp(player[currentPlayer].name, "sael") == 0 )
+  {
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_TWO;
+    CURRENT_END = END_TWO;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }else if( strcmp(player[currentPlayer].name, "kae") == 0 )
+  {
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_THREE;
+    CURRENT_END = END_THREE;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }else if( strcmp(player[currentPlayer].name, "tree") == 0 )
+  {
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_FOUR;
+    CURRENT_END = END_FOUR;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }else if( strcmp(player[currentPlayer].name, "gith") == 0 )
+  {
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_FIVE;
+    CURRENT_END = END_FIVE;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  } else if( strcmp(player[currentPlayer].name, "otadus") == 0 )
+  {
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_SIX;
+    CURRENT_END = END_SIX;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  } else  {
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_SEVEN;
+    CURRENT_END = END_SEVEN;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }
+}
+
+void setNextPlayer(int nextPlayer) {
+
+  NEXT_PLAYER = nextPlayer;
+  Blynk.virtualWrite(V30, player[nextPlayer].name);
+  
+  if( strcmp(player[nextPlayer].name, "shanko") == 0 )
+  {
+    clearCurrent(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_ONE;
+    NEXT_END = END_ONE;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  } else if( strcmp(player[nextPlayer].name, "sael") == 0 )
+  {
+    clearCurrent(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_TWO;
+    NEXT_END = END_TWO;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }else if( strcmp(player[nextPlayer].name, "kae") == 0 )
+  {
+    clearCurrent(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_THREE;
+    NEXT_END = END_THREE;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }else if( strcmp(player[nextPlayer].name, "tree") == 0 )
+  {
+    clearCurrent(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_FOUR;
+    NEXT_END = END_FOUR;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }else if( strcmp(player[nextPlayer].name, "gith") == 0 )
+  {
+    clearCurrent(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_FIVE;
+    NEXT_END = END_FIVE;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  } else if( strcmp(player[nextPlayer].name, "otadus") == 0 )
+  {
+    clearCurrent(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_SIX;
+    NEXT_END = END_SIX;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  } else  {
+    clearCurrent(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_SEVEN;
+    NEXT_END = END_SEVEN;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }
+}
+
 // This function sends Arduino's uptime every second to Virtual Pin 2.
 void myTimerEvent()
 {
   // You can send any value at any time.
   // Please don't send more that 10 values per second.
-  char test = "test";
-  Blynk.virtualWrite(V30, test);
+  /*char test[100] = "Sorted: ";
+  strcat(test, player[0].name);
+  strcat(test, player[1].name);
+  strcat(test, player[2].name);
+  strcat(test, player[3].name);
+  strcat(test, player[4].name);
+  strcat(test, player[5].name);
+  strcat(test, player[6].name);
+  strcat(test, player[7].name);
+  strcat(test, player[8].name);
+  strcat(test, player[9].name);*/
+  
+  char values[60] = "Values: ";
+  char intvalue[5];
+  sprintf( intvalue, "%d,", player[0].value);
+  strcat( values,intvalue); 
+  sprintf( intvalue, "%d,", player[1].value);
+  strcat( values,intvalue); 
+  sprintf( intvalue, "%d,", player[2].value);
+  strcat( values,intvalue); 
+  sprintf( intvalue, "%d,", player[3].value);
+  strcat( values,intvalue); 
+  sprintf( intvalue, "%d,", player[4].value);
+  strcat( values,intvalue); 
+  sprintf( intvalue, "%d,", player[5].value);
+  strcat( values,intvalue); 
+  sprintf( intvalue, "%d,", player[6].value);
+  strcat( values,intvalue); 
+  sprintf( intvalue, "%d,", player[7].value);
+  strcat( values,intvalue);
+  sprintf( intvalue, "%d,", player[8].value);
+  strcat( values,intvalue); 
+  sprintf( intvalue, "%d", player[9].value);
+  strcat( values,intvalue);
+
+  //strcat(test, values);
+  
+  Blynk.virtualWrite(V30, values);
 }
 
-BLYNK_WRITE(V3)
+/*BLYNK_WRITE(V3)
 {
   if(param.asInt() == 1) {
     CURRENT_SEAT = 0;
     NEXT_SEAT = 0;
     clearAll();
+
+    player[0].name = "shanko";
+    player[1].name = "sael";
+    player[2].name = "kae";
+    player[3].name = "tree";
+    player[4].name = "gith";
+    player[5].name = "otadus";
+    player[6].name = "monster1";
+    player[7].name = "monster2";
+    player[8].name = "monster3";
+    player[9].name = "monster4";
+
+    player[0].value = 0;
+    player[1].value = 0;
+    player[2].value = 0;
+    player[3].value = 0;
+    player[4].value = 0;
+    player[5].value = 0;
+    player[6].value = 0;
+    player[7].value = 0;
+    player[8].value = 0;
+    player[9].value = 0;
+    
   }
-}
+}*/
 
 BLYNK_WRITE(V20)
 {
   if(param.asInt() == 1) {
+    myTimerEvent();
     CURRENT_SEAT = 0;
     NEXT_SEAT = 0;
     clearAll();
     
-    qsort(player, 8, sizeof(Player),
-    cmpfunc);
-    
-    for (int i = 0; i < 7; i++)
+    qsort(player, 10, sizeof(Player),
+    compare);
+    setCurrentPlayer(0);
+    setNextPlayer(1);
+    myTimerEvent();
+  }
+}
+
+BLYNK_WRITE(V31)
+{
+  if(param.asInt() == 1) {
+    if( CURRENT_PLAYER == 9 )
     {
-      Serial.print(player[i].value);
-      Serial.print(player[i].name);
-      outputSort = outputSort + player[i].name;
+      setCurrentPlayer(0);
+      setNextPlayer(1);
+    }
+    else {
+      setCurrentPlayer( CURRENT_PLAYER + 1 );
+      if( CURRENT_PLAYER == 9 )
+        setNextPlayer(0);
+      else
+        setNextPlayer( CURRENT_PLAYER + 1);
     }
   }
 }
@@ -212,6 +418,7 @@ BLYNK_WRITE(V21)
 {
   int i = param.asInt();
   player[0].value = i;
+  Blynk.virtualWrite(V30, "Shanko");
 }
 
 BLYNK_WRITE(V22)
@@ -254,6 +461,18 @@ BLYNK_WRITE(V28)
 {
   int i = param.asInt();
   player[7].value = i;
+}
+
+BLYNK_WRITE(V29)
+{
+  int i = param.asInt();
+  player[8].value = i;
+}
+
+BLYNK_WRITE(V32)
+{
+  int i = param.asInt();
+  player[9].value = i;
 }
 
 BLYNK_WRITE(V4)
@@ -441,5 +660,5 @@ BLYNK_WRITE(V17)
 void loop()
 {
   Blynk.run();
-  timer.run();  
+  //timer.run();  
 }
