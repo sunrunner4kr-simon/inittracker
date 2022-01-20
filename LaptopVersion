@@ -1,0 +1,363 @@
+/*************************************************************
+  
+
+  This is a simple demo of sending and receiving some data.
+  Be sure to check out other examples!
+ *************************************************************/
+
+// Template ID, Device Name and Auth Token are provided by the Blynk.Cloud
+// See the Device Info tab, or Template settings
+#define BLYNK_TEMPLATE_ID "TMPLYeCsYsJf"
+#define BLYNK_DEVICE_NAME "New USB"
+#define BLYNK_AUTH_TOKEN "cZ92uGY3nZ6kAmwmCveVdQoOd0dvzWYF";
+
+
+// Comment this out to disable prints and save space
+#define BLYNK_PRINT SwSerial
+
+
+#include <SoftwareSerial.h>
+SoftwareSerial SwSerial(10, 11); // RX, TX
+
+#include <BlynkSimpleStream.h>
+
+char auth[] = BLYNK_AUTH_TOKEN;
+
+BlynkTimer timer;
+
+// This function is called every time the Virtual Pin 0 state changes
+BLYNK_WRITE(V0)
+{
+  // Set incoming value from pin V0 to a variable
+  int value = param.asInt();
+
+  // Update state
+  Blynk.virtualWrite(V1, value);
+}
+
+// This function is called every time the device is connected to the Blynk.Cloud
+BLYNK_CONNECTED()
+{
+  // Change Web Link Button message to "Congratulations!"
+  Blynk.setProperty(V3, "offImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations.png");
+  Blynk.setProperty(V3, "onImageUrl",  "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations_pressed.png");
+  Blynk.setProperty(V3, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
+}
+
+// This function sends Arduino's uptime every second to Virtual Pin 2.
+void myTimerEvent()
+{
+  // You can send any value at any time.
+  // Please don't send more that 10 values per second.
+  Blynk.virtualWrite(V2, millis() / 1000);
+}
+
+#include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+ #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
+#endif
+
+// Which pin on the Arduino is connected to the NeoPixels?
+// On a Trinket or Gemma we suggest changing this to 1:
+#define LED_PIN     6
+
+// How many NeoPixels are attached to the Arduino?
+#define LED_COUNT  91
+
+// NeoPixel brightness, 0 (min) to 255 (max)
+#define BRIGHTNESS 150 // Set BRIGHTNESS to about 1/5 (max = 255)
+
+// Declare our NeoPixel strip object:
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRBW + NEO_KHZ800);
+// Argument 1 = Number of pixels in NeoPixel strip
+// Argument 2 = Arduino pin number (most are valid)
+// Argument 3 = Pixel type flags, add together as needed:
+//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
+//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+//   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
+
+void setup()
+{
+  // Debug console
+  SwSerial.begin(115200);
+
+  // Blynk will work through Serial
+  // Do not read or write this serial manually in your sketch
+  Serial.begin(9600);
+  Blynk.begin(Serial, auth);
+
+ 
+  // Setup a function to be called every second
+  timer.setInterval(1000L, myTimerEvent);
+
+  #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
+  clock_prescale_set(clock_div_1);
+#endif
+  // END of Trinket-specific code.
+
+  strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
+  strip.show();            // Turn OFF all pixels ASAP
+  strip.setBrightness(BRIGHTNESS);
+}
+
+//Seat definitions
+
+int CURRENT_SEAT = 100;
+int CURRENT_END = 100;
+int NEXT_SEAT = 100;
+int NEXT_END = 100;
+
+#define SEAT_ONE 0
+#define SEAT_TWO 14
+#define SEAT_THREE 31
+#define SEAT_FOUR 46
+#define SEAT_FIVE 61
+#define SEAT_SIX 76
+#define SEAT_SEVEN 84
+
+#define END_ONE 14
+#define END_TWO 17
+#define END_THREE 15
+#define END_FOUR 15
+#define END_FIVE 15
+#define END_SIX 8
+#define END_SEVEN 7
+
+//Need a clear all
+void clearAll() {
+  strip.fill();
+  strip.show();
+}
+
+void setSeat(int start, int leds) {
+  if( NEXT_SEAT == start ) {
+    NEXT_SEAT = 100;
+  }
+  strip.fill(strip.Color(255, 0, 255),start, leds);
+  strip.show();
+}
+
+void setSeatNext(int start, int leds) {
+  if( CURRENT_SEAT == start ) {
+    CURRENT_SEAT = 100;
+  }
+  strip.fill(strip.Color(0, 255, 0),start, leds);
+  strip.show();
+}
+
+void clearCurrent(int start, int leds) {
+  if( CURRENT_SEAT == 100 ) {
+    return;
+  } else {
+    strip.fill(0, start, leds);
+  }
+}
+
+void clearNext(int start, int leds) {
+  if( NEXT_SEAT == 100 ) {
+     return;
+  } else {
+    strip.fill(0, start, leds);
+  }
+}
+
+BLYNK_WRITE(V3)
+{
+  if(param.asInt() == 1) {
+    CURRENT_SEAT = 0;
+    NEXT_SEAT = 0;
+    clearAll();
+  }
+}
+
+BLYNK_WRITE(V4)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_ONE;
+    CURRENT_END = END_ONE;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }
+}
+
+BLYNK_WRITE(V5)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearNext(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_ONE;
+    NEXT_END = END_ONE;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }
+}
+
+BLYNK_WRITE(V6)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_TWO;
+    CURRENT_END = END_TWO;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }
+}
+
+BLYNK_WRITE(V7)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearNext(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_TWO;
+    NEXT_END = END_TWO;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }
+}
+
+BLYNK_WRITE(V8)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_THREE;
+    CURRENT_END = END_THREE;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }
+}
+
+BLYNK_WRITE(V9)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearNext(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_THREE;
+    NEXT_END = END_THREE;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }
+}
+
+BLYNK_WRITE(V10)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_FOUR;
+    CURRENT_END = END_FOUR;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }
+}
+
+BLYNK_WRITE(V11)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearNext(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_FOUR;
+    NEXT_END = END_FOUR;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }
+}
+
+BLYNK_WRITE(V12)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_FIVE;
+    CURRENT_END = END_FIVE;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }
+}
+
+BLYNK_WRITE(V13)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearNext(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_FIVE;
+    NEXT_END = END_FIVE;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }
+}
+
+BLYNK_WRITE(V14)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_SIX;
+    CURRENT_END = END_SIX;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }
+}
+
+BLYNK_WRITE(V15)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearNext(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_SIX;
+    NEXT_END = END_SIX;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }
+}
+
+BLYNK_WRITE(V16)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_SEVEN;
+    CURRENT_END = END_SEVEN;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  }
+}
+
+BLYNK_WRITE(V17)
+{
+  if(param.asInt() == 1) {
+    //clear previous set of leds
+    clearNext(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_SEVEN;
+    NEXT_END = END_SEVEN;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  }
+}
+
+
+
+void loop()
+{
+  Blynk.run();
+  timer.run();  
+}
