@@ -27,14 +27,14 @@ char auth[] = BLYNK_AUTH_TOKEN;
 BlynkTimer timer;
 
 // This function is called every time the Virtual Pin 0 state changes
-BLYNK_WRITE(V0)
+/*BLYNK_WRITE(V0)
 {
   // Set incoming value from pin V0 to a variable
   int value = param.asInt();
 
   // Update state
   Blynk.virtualWrite(V1, value);
-}
+}*/
 
 // This function is called every time the device is connected to the Blynk.Cloud
 BLYNK_CONNECTED()
@@ -45,13 +45,7 @@ BLYNK_CONNECTED()
   Blynk.setProperty(V3, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
 }
 
-// This function sends Arduino's uptime every second to Virtual Pin 2.
-void myTimerEvent()
-{
-  // You can send any value at any time.
-  // Please don't send more that 10 values per second.
-  Blynk.virtualWrite(V2, millis() / 1000);
-}
+
 
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
@@ -175,6 +169,17 @@ int cmpfunc (const void * a, const void * b) {
       return ( *(int*)a - *(int*)b );
 }
 
+
+char outputSort;
+// This function sends Arduino's uptime every second to Virtual Pin 2.
+void myTimerEvent()
+{
+  // You can send any value at any time.
+  // Please don't send more that 10 values per second.
+  char test = "test";
+  Blynk.virtualWrite(V30, test);
+}
+
 BLYNK_WRITE(V3)
 {
   if(param.asInt() == 1) {
@@ -190,17 +195,15 @@ BLYNK_WRITE(V20)
     CURRENT_SEAT = 0;
     NEXT_SEAT = 0;
     clearAll();
-
+    
     qsort(player, 8, sizeof(Player),
     cmpfunc);
-
-    char outputSort;
+    
     for (int i = 0; i < 7; i++)
     {
       Serial.print(player[i].value);
       Serial.print(player[i].name);
       outputSort = outputSort + player[i].name;
-      Blynk.virtualWrite(V30, outputSort);
     }
   }
 }
