@@ -1,5 +1,5 @@
 /*************************************************************
-  
+
 
   This is a simple demo of sending and receiving some data.
   Be sure to check out other examples!
@@ -26,16 +26,6 @@ char auth[] = BLYNK_AUTH_TOKEN;
 
 BlynkTimer timer;
 
-// This function is called every time the Virtual Pin 0 state changes
-/*BLYNK_WRITE(V0)
-{
-  // Set incoming value from pin V0 to a variable
-  int value = param.asInt();
-
-  // Update state
-  Blynk.virtualWrite(V1, value);
-}*/
-
 // This function is called every time the device is connected to the Blynk.Cloud
 BLYNK_CONNECTED()
 {
@@ -43,13 +33,13 @@ BLYNK_CONNECTED()
   Blynk.setProperty(V3, "offImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations.png");
   Blynk.setProperty(V3, "onImageUrl",  "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations_pressed.png");
   Blynk.setProperty(V3, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
+
+  Blynk.syncAll();
 }
-
-
 
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
- #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
+#include <avr/power.h> // Required for 16 MHz Adafruit Trinket
 #endif
 
 // Which pin on the Arduino is connected to the NeoPixels?
@@ -57,7 +47,7 @@ BLYNK_CONNECTED()
 #define LED_PIN     6
 
 // How many NeoPixels are attached to the Arduino?
-#define LED_COUNT  14
+#define LED_COUNT  91
 
 // NeoPixel brightness, 0 (min) to 255 (max)
 #define BRIGHTNESS 150 // Set BRIGHTNESS to about 1/5 (max = 255)
@@ -83,11 +73,11 @@ void setup()
   Serial.begin(9600);
   Blynk.begin(Serial, auth);
 
- 
-  // Setup a function to be called every second
-  timer.setInterval(1000L, myTimerEvent);
 
-  #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
+  // Setup a function to be called every second
+  timer.setInterval(2000, getPlayers);
+
+#if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
   clock_prescale_set(clock_div_1);
 #endif
   // END of Trinket-specific code.
@@ -97,48 +87,57 @@ void setup()
   strip.setBrightness(BRIGHTNESS);
 }
 
+void colorWipe(uint32_t c, int wait) {
+  for (uint16_t i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, c);
+    strip.show();
+    delay(wait);
+  }
+}
+
 //Seat definitions
 
-int CURRENT_SEAT = 0;
-int CURRENT_END = 0;
-int NEXT_SEAT = 0;
-int NEXT_END = 0;
+int CURRENT_SEAT = 100;
+int CURRENT_END = 100;
+int NEXT_SEAT = 100;
+int NEXT_END = 100;
 
 int CURRENT_PLAYER = 0;
 int NEXT_PLAYER = 0;
 
 #define SEAT_ONE 0
-#define SEAT_TWO 3
-#define SEAT_THREE 7
-#define SEAT_FOUR 11
-#define SEAT_FIVE 15
-#define SEAT_SIX 19
-#define SEAT_SEVEN 23
+#define SEAT_TWO 14
+#define SEAT_THREE 31
+#define SEAT_FOUR 46
+#define SEAT_FIVE 61
+#define SEAT_SIX 76
+#define SEAT_SEVEN 84
 
-#define END_ONE 4
-#define END_TWO 4
-#define END_THREE 4
-#define END_FOUR 4
-#define END_FIVE 4
-#define END_SIX 4
-#define END_SEVEN 4
+#define END_ONE 14
+#define END_TWO 17
+#define END_THREE 15
+#define END_FOUR 15
+#define END_FIVE 15
+#define END_SIX 8
+#define END_SEVEN 7
 
-struct Player{
+struct Player {
   char* name;
   int value;
+  int enabled;
 };
 
 Player player[] = {
-  {"shanko", 0},
-  {"sael", 0},
-  {"kae", 0},
-  {"tree", 0},
-  {"gith", 0},
-  {"otadus", 0},
-  {"monster1", 0},
-  {"monster2", 0},
-  {"monster3", 0},
-  {"monster4", 0}
+  {"shanko", 0, 0},
+  {"sael", 0, 0},
+  {"kae", 0, 0},
+  {"tree", 0, 0},
+  {"gith", 0, 0},
+  {"otadus", 0, 0},
+  {"monster1", 0, 0},
+  {"monster2", 0, 0},
+  {"monster3", 0, 0},
+  {"monster4", 0, 0}
 };
 
 //Need a clear all
@@ -148,29 +147,41 @@ void clearAll() {
 }
 
 void setSeat(int start, int leds) {
-  if( NEXT_SEAT == start ) {
-    NEXT_SEAT = 0;
+  if ( NEXT_SEAT == start ) {
+    NEXT_SEAT = 100;
   }
-  strip.fill(strip.Color(2, 224, 99),start, leds);
+
+  strip.fill(strip.Color(224, 101, 157), start, leds);
   strip.show();
 }
 
 void setSeatNext(int start, int leds) {
-  if( CURRENT_SEAT == start ) {
-    CURRENT_SEAT = 0;
+  if ( CURRENT_SEAT == start ) {
+    CURRENT_SEAT = 100;
   }
-  strip.fill(strip.Color(255, 255, 255),start, leds);
-  strip.show();
+  colorWipe(strip.Color(2, 224, 99), 500);
+  //strip.fill(strip.Color(2, 224, 99),start, leds);
+  //strip.show();
 }
 
 void clearCurrent(int start, int leds) {
-  strip.fill(0, start, leds);
+  if ( CURRENT_SEAT == 100 ) {
+    return;
+  } else {
+    strip.fill(0, start, leds);
+  }
 }
 
+void clearNext(int start, int leds) {
+  if ( NEXT_SEAT == 100 ) {
+    return;
+  } else {
+    strip.fill(0, start, leds);
+  }
+}
 
 int compare (const void * a, const void * b)
 {
-
   Player *orderA = (Player *)a;
   Player *orderB = (Player *)b;
 
@@ -181,16 +192,8 @@ void setCurrentPlayer(int currentPlayer) {
 
   CURRENT_PLAYER = currentPlayer;
   Blynk.virtualWrite(V30, player[currentPlayer].name);
-  
-  if( strcmp(player[currentPlayer].name, "shanko") == 0 )
-  {
-    clearCurrent(CURRENT_SEAT, CURRENT_END);
-    //set this seat as current
-    CURRENT_SEAT = SEAT_ONE;
-    CURRENT_END = END_ONE;
-    //light seat
-    setSeat(CURRENT_SEAT, CURRENT_END);
-  } else if( strcmp(player[currentPlayer].name, "sael") == 0 )
+
+  if ( strcmp(player[currentPlayer].name, "shanko") == 0 )
   {
     clearCurrent(CURRENT_SEAT, CURRENT_END);
     //set this seat as current
@@ -198,7 +201,7 @@ void setCurrentPlayer(int currentPlayer) {
     CURRENT_END = END_TWO;
     //light seat
     setSeat(CURRENT_SEAT, CURRENT_END);
-  }else if( strcmp(player[currentPlayer].name, "kae") == 0 )
+  } else if ( strcmp(player[currentPlayer].name, "sael") == 0 )
   {
     clearCurrent(CURRENT_SEAT, CURRENT_END);
     //set this seat as current
@@ -206,7 +209,7 @@ void setCurrentPlayer(int currentPlayer) {
     CURRENT_END = END_THREE;
     //light seat
     setSeat(CURRENT_SEAT, CURRENT_END);
-  }else if( strcmp(player[currentPlayer].name, "tree") == 0 )
+  } else if ( strcmp(player[currentPlayer].name, "kae") == 0 )
   {
     clearCurrent(CURRENT_SEAT, CURRENT_END);
     //set this seat as current
@@ -214,7 +217,7 @@ void setCurrentPlayer(int currentPlayer) {
     CURRENT_END = END_FOUR;
     //light seat
     setSeat(CURRENT_SEAT, CURRENT_END);
-  }else if( strcmp(player[currentPlayer].name, "gith") == 0 )
+  } else if ( strcmp(player[currentPlayer].name, "tree") == 0 )
   {
     clearCurrent(CURRENT_SEAT, CURRENT_END);
     //set this seat as current
@@ -222,7 +225,7 @@ void setCurrentPlayer(int currentPlayer) {
     CURRENT_END = END_FIVE;
     //light seat
     setSeat(CURRENT_SEAT, CURRENT_END);
-  } else if( strcmp(player[currentPlayer].name, "otadus") == 0 )
+  } else if ( strcmp(player[currentPlayer].name, "gith") == 0 )
   {
     clearCurrent(CURRENT_SEAT, CURRENT_END);
     //set this seat as current
@@ -230,11 +233,18 @@ void setCurrentPlayer(int currentPlayer) {
     CURRENT_END = END_SIX;
     //light seat
     setSeat(CURRENT_SEAT, CURRENT_END);
-  } else  {
+  } else if ( strcmp(player[currentPlayer].name, "otadus") == 0 )  {
     clearCurrent(CURRENT_SEAT, CURRENT_END);
     //set this seat as current
     CURRENT_SEAT = SEAT_SEVEN;
     CURRENT_END = END_SEVEN;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  } else {
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_ONE;
+    CURRENT_END = END_ONE;
     //light seat
     setSeat(CURRENT_SEAT, CURRENT_END);
   }
@@ -244,16 +254,8 @@ void setNextPlayer(int nextPlayer) {
 
   NEXT_PLAYER = nextPlayer;
   Blynk.virtualWrite(V30, player[nextPlayer].name);
-  
-  if( strcmp(player[nextPlayer].name, "shanko") == 0 )
-  {
-    clearCurrent(NEXT_SEAT, NEXT_END);
-    //set this seat as current
-    NEXT_SEAT = SEAT_ONE;
-    NEXT_END = END_ONE;
-    //light seat
-    setSeatNext(NEXT_SEAT, NEXT_END);
-  } else if( strcmp(player[nextPlayer].name, "sael") == 0 )
+
+  if ( strcmp(player[nextPlayer].name, "shanko") == 0 )
   {
     clearCurrent(NEXT_SEAT, NEXT_END);
     //set this seat as current
@@ -261,7 +263,7 @@ void setNextPlayer(int nextPlayer) {
     NEXT_END = END_TWO;
     //light seat
     setSeatNext(NEXT_SEAT, NEXT_END);
-  }else if( strcmp(player[nextPlayer].name, "kae") == 0 )
+  } else if ( strcmp(player[nextPlayer].name, "sael") == 0 )
   {
     clearCurrent(NEXT_SEAT, NEXT_END);
     //set this seat as current
@@ -269,7 +271,7 @@ void setNextPlayer(int nextPlayer) {
     NEXT_END = END_THREE;
     //light seat
     setSeatNext(NEXT_SEAT, NEXT_END);
-  }else if( strcmp(player[nextPlayer].name, "tree") == 0 )
+  } else if ( strcmp(player[nextPlayer].name, "kae") == 0 )
   {
     clearCurrent(NEXT_SEAT, NEXT_END);
     //set this seat as current
@@ -277,7 +279,7 @@ void setNextPlayer(int nextPlayer) {
     NEXT_END = END_FOUR;
     //light seat
     setSeatNext(NEXT_SEAT, NEXT_END);
-  }else if( strcmp(player[nextPlayer].name, "gith") == 0 )
+  } else if ( strcmp(player[nextPlayer].name, "tree") == 0 )
   {
     clearCurrent(NEXT_SEAT, NEXT_END);
     //set this seat as current
@@ -285,7 +287,7 @@ void setNextPlayer(int nextPlayer) {
     NEXT_END = END_FIVE;
     //light seat
     setSeatNext(NEXT_SEAT, NEXT_END);
-  } else if( strcmp(player[nextPlayer].name, "otadus") == 0 )
+  } else if ( strcmp(player[nextPlayer].name, "gith") == 0 )
   {
     clearCurrent(NEXT_SEAT, NEXT_END);
     //set this seat as current
@@ -293,22 +295,59 @@ void setNextPlayer(int nextPlayer) {
     NEXT_END = END_SIX;
     //light seat
     setSeatNext(NEXT_SEAT, NEXT_END);
-  } else  {
+  } else if ( strcmp(player[nextPlayer].name, "otadus") == 0 )
+  {
     clearCurrent(NEXT_SEAT, NEXT_END);
     //set this seat as current
     NEXT_SEAT = SEAT_SEVEN;
     NEXT_END = END_SEVEN;
     //light seat
     setSeatNext(NEXT_SEAT, NEXT_END);
+  } else
+  {
+    clearCurrent(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_ONE;
+    NEXT_END = END_ONE;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
   }
 }
 
-// This function sends Arduino's uptime every second to Virtual Pin 2.
-void myTimerEvent()
+void printValues()
 {
-  // You can send any value at any time.
-  // Please don't send more that 10 values per second.
-  /*char test[100] = "Sorted: ";
+  //TODO: only show players in array
+  char values[60] = "Values: ";
+  char intvalue[5];
+  sprintf( intvalue, "%d,", player[0].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[1].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[2].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[3].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[4].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[5].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[6].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[7].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[8].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d", player[9].value);
+  strcat( values, intvalue);
+
+  Blynk.virtualWrite(V30, values);
+}
+
+// This function sends Arduino's uptime every second to Virtual Pin 2.
+void printNames()
+{
+  //TODO: only show players in array
+  char test[100] = "Names: ";
   strcat(test, player[0].name);
   strcat(test, player[1].name);
   strcat(test, player[2].name);
@@ -318,53 +357,126 @@ void myTimerEvent()
   strcat(test, player[6].name);
   strcat(test, player[7].name);
   strcat(test, player[8].name);
-  strcat(test, player[9].name);*/
-  
-  char values[60] = "Values: ";
-  char intvalue[5];
-  sprintf( intvalue, "%d,", player[0].value);
-  strcat( values,intvalue); 
-  sprintf( intvalue, "%d,", player[1].value);
-  strcat( values,intvalue); 
-  sprintf( intvalue, "%d,", player[2].value);
-  strcat( values,intvalue); 
-  sprintf( intvalue, "%d,", player[3].value);
-  strcat( values,intvalue); 
-  sprintf( intvalue, "%d,", player[4].value);
-  strcat( values,intvalue); 
-  sprintf( intvalue, "%d,", player[5].value);
-  strcat( values,intvalue); 
-  sprintf( intvalue, "%d,", player[6].value);
-  strcat( values,intvalue); 
-  sprintf( intvalue, "%d,", player[7].value);
-  strcat( values,intvalue);
-  sprintf( intvalue, "%d,", player[8].value);
-  strcat( values,intvalue); 
-  sprintf( intvalue, "%d", player[9].value);
-  strcat( values,intvalue);
+  strcat(test, player[9].name);
 
-  //strcat(test, values);
-  
-  Blynk.virtualWrite(V30, values);
+
+  Blynk.virtualWrite(V30, test);
 }
 
-/*BLYNK_WRITE(V3)
+void getPlayers() {
+
+  //TODO: replace with LOOP
+  char values[60] = "";
+  char intvalue[5];
+  sprintf( intvalue, "%d,", player[0].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[1].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[2].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[3].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[4].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[5].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[6].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[7].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[8].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d", player[9].value);
+  strcat( values, intvalue);
+
+  Blynk.virtualWrite(V4, values);
+}
+
+/*Create struct array of Player from active players
+  void createPlayerList() {
+  int p = 0;
+  for ( int i = 0; i < 9; i++) {
+    if ( activePlayers[i].value == 1 )
+    {
+      strcpy(player[p].name, activePlayers[i].name);
+      player[p].value = player[i].value;
+      p++;
+    }
+  }
+  }*/
+
+int findNextActivePlayer(int nextPlayer) {
+  int length = sizeof(player) / sizeof(player[0]);
+
+  for ( int i = 0; i < length; i++) {
+    if ( player[nextPlayer % length].enabled != 0 )
+      return nextPlayer % length;
+  }
+  return 0;
+}
+
+
+BLYNK_WRITE(V20)
 {
-  if(param.asInt() == 1) {
-    CURRENT_SEAT = 0;
-    NEXT_SEAT = 0;
+  if (param.asInt() == 1) {
+    printValues();
+    CURRENT_SEAT = 100;
+    NEXT_SEAT = 100;
     clearAll();
 
-    player[0].name = "shanko";
-    player[1].name = "sael";
-    player[2].name = "kae";
-    player[3].name = "tree";
-    player[4].name = "gith";
-    player[5].name = "otadus";
-    player[6].name = "monster1";
-    player[7].name = "monster2";
-    player[8].name = "monster3";
-    player[9].name = "monster4";
+    //TODO: copy the stored name values to a new array to be sorted.
+    //Create an array from active members only
+    //createPlayerList();
+
+    //TODO: can I sync all Virtual pins now?
+
+    qsort(player, 10, sizeof(Player),
+          compare);
+
+    setCurrentPlayer(findNextActivePlayer(0));
+    setNextPlayer(findNextActivePlayer(CURRENT_PLAYER + 1));
+    printValues();
+  }
+}
+
+BLYNK_WRITE(V31)
+{
+  if (param.asInt() == 1) {
+    setCurrentPlayer(findNextActivePlayer(CURRENT_PLAYER));
+    setNextPlayer(findNextActivePlayer(CURRENT_PLAYER + 1));
+    /*if ( CURRENT_PLAYER == 9 )
+      {
+      setCurrentPlayer(0);
+      setNextPlayer(1);
+      }
+      else {
+      setCurrentPlayer( CURRENT_PLAYER + 1 );
+      if ( CURRENT_PLAYER == 9 )
+        setNextPlayer(0);
+      else
+        setNextPlayer( CURRENT_PLAYER + 1);
+      }*/
+  }
+}
+
+BLYNK_WRITE(V40)
+{
+  if (param.asInt() == 1) {
+    Blynk.virtualWrite(V30, "resetting");
+    CURRENT_SEAT = 100;
+    NEXT_SEAT = 100;
+    clearAll();
+
+    strcpy(player[0].name, "shanko");
+    strcpy(player[1].name, "sael");
+    strcpy(player[2].name, "kae");
+    strcpy(player[3].name, "tree");
+    strcpy(player[4].name, "gith");
+    strcpy(player[5].name, "otadus");
+    strcpy(player[6].name, "monster1");
+    strcpy(player[7].name, "monster2");
+    strcpy(player[8].name, "monster3");
+    strcpy(player[9].name, "monster4");
 
     player[0].value = 0;
     player[1].value = 0;
@@ -376,43 +488,84 @@ void myTimerEvent()
     player[7].value = 0;
     player[8].value = 0;
     player[9].value = 0;
-    
-  }
-}*/
 
-BLYNK_WRITE(V20)
-{
-  if(param.asInt() == 1) {
-    myTimerEvent();
-    CURRENT_SEAT = 0;
-    NEXT_SEAT = 0;
-    clearAll();
-    
-    qsort(player, 10, sizeof(Player),
-    compare);
-    setCurrentPlayer(0);
-    setNextPlayer(1);
-    myTimerEvent();
+    printValues();
+
   }
 }
 
-BLYNK_WRITE(V31)
+
+/*********************************************
+   PLAYER TOGGLES
+*/
+
+
+//TODO: update to loop through virtual pins
+BLYNK_WRITE(V50)
 {
-  if(param.asInt() == 1) {
-    if( CURRENT_PLAYER == 9 )
-    {
-      setCurrentPlayer(0);
-      setNextPlayer(1);
-    }
-    else {
-      setCurrentPlayer( CURRENT_PLAYER + 1 );
-      if( CURRENT_PLAYER == 9 )
-        setNextPlayer(0);
-      else
-        setNextPlayer( CURRENT_PLAYER + 1);
-    }
-  }
+  int i = param.asInt();
+  player[0].enabled = i;
 }
+
+BLYNK_WRITE(V51)
+{
+  int i = param.asInt();
+  player[1].enabled = i;
+}
+
+BLYNK_WRITE(V52)
+{
+  int i = param.asInt();
+  player[2].enabled = i;
+}
+
+BLYNK_WRITE(V53)
+{
+  int i = param.asInt();
+  player[3].enabled = i;
+}
+
+BLYNK_WRITE(V54)
+{
+  int i = param.asInt();
+  player[4].enabled = i;
+}
+
+BLYNK_WRITE(V55)
+{
+  int i = param.asInt();
+  player[5].enabled = i;
+}
+
+BLYNK_WRITE(V56)
+{
+  int i = param.asInt();
+  player[6].enabled = i;
+}
+
+BLYNK_WRITE(V57)
+{
+  int i = param.asInt();
+  player[7].enabled = i;
+}
+
+BLYNK_WRITE(V58)
+{
+  int i = param.asInt();
+  player[8].enabled = i;
+}
+
+BLYNK_WRITE(V59)
+{
+  int i = param.asInt();
+  player[9].enabled = i;
+}
+
+//TODO: Read all the player values BLYNK_READ
+
+/*****************************
+   PLAYER VALUES
+*/
 
 BLYNK_WRITE(V21)
 {
@@ -425,240 +578,68 @@ BLYNK_WRITE(V22)
 {
   int i = param.asInt();
   player[1].value = i;
+  Blynk.virtualWrite(V30, "Saelwyn");
 }
 
 BLYNK_WRITE(V23)
 {
   int i = param.asInt();
   player[2].value = i;
+  Blynk.virtualWrite(V30, "Kaelar");
 }
 
 BLYNK_WRITE(V24)
 {
   int i = param.asInt();
   player[3].value = i;
+  Blynk.virtualWrite(V30, "Tree");
 }
 
 BLYNK_WRITE(V25)
 {
   int i = param.asInt();
   player[4].value = i;
+  Blynk.virtualWrite(V30, "Gith");
 }
 
 BLYNK_WRITE(V26)
 {
   int i = param.asInt();
   player[5].value = i;
+  Blynk.virtualWrite(V30, "Otadus");
 }
 
 BLYNK_WRITE(V27)
 {
   int i = param.asInt();
   player[6].value = i;
+  Blynk.virtualWrite(V30, "Monster1");
 }
 
 BLYNK_WRITE(V28)
 {
   int i = param.asInt();
   player[7].value = i;
+  Blynk.virtualWrite(V30, "Monster2");
 }
 
 BLYNK_WRITE(V29)
 {
   int i = param.asInt();
   player[8].value = i;
+  Blynk.virtualWrite(V30, "Monster3");
 }
 
 BLYNK_WRITE(V32)
 {
   int i = param.asInt();
   player[9].value = i;
-}
-
-BLYNK_WRITE(V4)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(CURRENT_SEAT, CURRENT_END);
-    //set this seat as current
-    CURRENT_SEAT = SEAT_ONE;
-    CURRENT_END = END_ONE;
-    //light seat
-    setSeat(CURRENT_SEAT, CURRENT_END);
-  }
-}
-
-BLYNK_WRITE(V5)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(NEXT_SEAT, NEXT_END);
-    //set this seat as current
-    NEXT_SEAT = SEAT_ONE;
-    NEXT_END = END_ONE;
-    //light seat
-    setSeatNext(NEXT_SEAT, NEXT_END);
-  }
-}
-
-BLYNK_WRITE(V6)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(CURRENT_SEAT, CURRENT_END);
-    //set this seat as current
-    CURRENT_SEAT = SEAT_TWO;
-    CURRENT_END = END_TWO;
-    //light seat
-    setSeat(CURRENT_SEAT, CURRENT_END);
-  }
-}
-
-BLYNK_WRITE(V7)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(NEXT_SEAT, NEXT_END);
-    //set this seat as current
-    NEXT_SEAT = SEAT_TWO;
-    NEXT_END = END_TWO;
-    //light seat
-    setSeatNext(NEXT_SEAT, NEXT_END);
-  }
-}
-
-BLYNK_WRITE(V8)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(CURRENT_SEAT, CURRENT_END);
-    //set this seat as current
-    CURRENT_SEAT = SEAT_THREE;
-    CURRENT_END = END_THREE;
-    //light seat
-    setSeat(CURRENT_SEAT, CURRENT_END);
-  }
-}
-
-BLYNK_WRITE(V9)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(NEXT_SEAT, NEXT_END);
-    //set this seat as current
-    NEXT_SEAT = SEAT_THREE;
-    NEXT_END = END_THREE;
-    //light seat
-    setSeatNext(NEXT_SEAT, NEXT_END);
-  }
-}
-
-BLYNK_WRITE(V10)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(CURRENT_SEAT, CURRENT_END);
-    //set this seat as current
-    CURRENT_SEAT = SEAT_FOUR;
-    CURRENT_END = END_FOUR;
-    //light seat
-    setSeat(CURRENT_SEAT, CURRENT_END);
-  }
-}
-
-BLYNK_WRITE(V11)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(NEXT_SEAT, NEXT_END);
-    //set this seat as current
-    NEXT_SEAT = SEAT_FOUR;
-    NEXT_END = END_FOUR;
-    //light seat
-    setSeatNext(NEXT_SEAT, NEXT_END);
-  }
-}
-
-BLYNK_WRITE(V12)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(CURRENT_SEAT, CURRENT_END);
-    //set this seat as current
-    CURRENT_SEAT = SEAT_FIVE;
-    CURRENT_END = END_FIVE;
-    //light seat
-    setSeat(CURRENT_SEAT, CURRENT_END);
-  }
-}
-
-BLYNK_WRITE(V13)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(NEXT_SEAT, NEXT_END);
-    //set this seat as current
-    NEXT_SEAT = SEAT_FIVE;
-    NEXT_END = END_FIVE;
-    //light seat
-    setSeatNext(NEXT_SEAT, NEXT_END);
-  }
-}
-
-BLYNK_WRITE(V14)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(CURRENT_SEAT, CURRENT_END);
-    //set this seat as current
-    CURRENT_SEAT = SEAT_SIX;
-    CURRENT_END = END_SIX;
-    //light seat
-    setSeat(CURRENT_SEAT, CURRENT_END);
-  }
-}
-
-BLYNK_WRITE(V15)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(NEXT_SEAT, NEXT_END);
-    //set this seat as current
-    NEXT_SEAT = SEAT_SIX;
-    NEXT_END = END_SIX;
-    //light seat
-    setSeatNext(NEXT_SEAT, NEXT_END);
-  }
-}
-
-BLYNK_WRITE(V16)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(CURRENT_SEAT, CURRENT_END);
-    //set this seat as current
-    CURRENT_SEAT = SEAT_SEVEN;
-    CURRENT_END = END_SEVEN;
-    //light seat
-    setSeat(CURRENT_SEAT, CURRENT_END);
-  }
-}
-
-BLYNK_WRITE(V17)
-{
-  if(param.asInt() == 1) {
-    //clear previous set of leds
-    clearCurrent(NEXT_SEAT, NEXT_END);
-    //set this seat as current
-    NEXT_SEAT = SEAT_SEVEN;
-    NEXT_END = END_SEVEN;
-    //light seat
-    setSeatNext(NEXT_SEAT, NEXT_END);
-  }
+  Blynk.virtualWrite(V30, "Monster4");
 }
 
 void loop()
 {
   Blynk.run();
-  //timer.run();  
+  timer.run();
+  //getEnabled.run();
 }
