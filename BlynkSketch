@@ -9,7 +9,7 @@
 // See the Device Info tab, or Template settings
 #define BLYNK_TEMPLATE_ID "TMPLZDUKXFxZ"
 #define BLYNK_DEVICE_NAME "Initiative Tracker"
-#define BLYNK_AUTH_TOKEN "hcuUEbHw2Ce2hchWv6ND9Qk4ekJ_3f_K"
+#define BLYNK_AUTH_TOKEN "4XL1fvb3ysyO0xXD2_A1FF0BSbNGrkN9"
 
 
 // Comment this out to disable prints and save space
@@ -30,11 +30,13 @@ BlynkTimer timer;
 BLYNK_CONNECTED()
 {
   // Change Web Link Button message to "Congratulations!"
-  Blynk.setProperty(V3, "offImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations.png");
-  Blynk.setProperty(V3, "onImageUrl",  "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations_pressed.png");
-  Blynk.setProperty(V3, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
-
-  Blynk.syncAll();
+  Blynk.setProperty(V0, "offImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations.png");
+  Blynk.setProperty(V0, "onImageUrl",  "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations_pressed.png");
+  Blynk.setProperty(V0, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
+  //Blynk.syncVirtual(V1,V2,V3,V6,V7,V8,V9,V10,V11,V12,V13,V14,V17,V18,V19,V21,V22,V23,V24,V25,V26,V27,V28,V29);
+  //Blynk.syncVirtual(V6);
+  Blynk.virtualWrite(V30, "Sync complete");
+  clearAll();
 }
 
 #include <Adafruit_NeoPixel.h>
@@ -73,9 +75,9 @@ void setup()
   Serial.begin(9600);
   Blynk.begin(Serial, auth);
 
-
   // Setup a function to be called every second
   timer.setInterval(2000, getPlayers);
+  timer.setInterval(2200, getEnabled);
 
 #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
   clock_prescale_set(clock_div_1);
@@ -87,8 +89,8 @@ void setup()
   strip.setBrightness(BRIGHTNESS);
 }
 
-void colorWipe(uint32_t c, int wait) {
-  for (uint16_t i = 0; i < strip.numPixels(); i++) {
+void colorWipe(uint32_t c, int wait, int leds) {
+  for (uint16_t i = 0; i < leds; i++) {
     strip.setPixelColor(i, c);
     strip.show();
     delay(wait);
@@ -137,7 +139,9 @@ Player player[] = {
   {"monster1", 0, 0},
   {"monster2", 0, 0},
   {"monster3", 0, 0},
-  {"monster4", 0, 0}
+  {"monster4", 0, 0},
+  {"owl", 0, 0},
+  {"monster5", 0, 0}
 };
 
 //Need a clear all
@@ -159,9 +163,9 @@ void setSeatNext(int start, int leds) {
   if ( CURRENT_SEAT == start ) {
     CURRENT_SEAT = 100;
   }
-  colorWipe(strip.Color(2, 224, 99), 500);
-  //strip.fill(strip.Color(2, 224, 99),start, leds);
-  //strip.show();
+  //colorWipe(strip.Color(2, 224, 99), 500, leds);
+  strip.fill(strip.Color(2, 224, 99),start, leds);
+  strip.show();
 }
 
 void clearCurrent(int start, int leds) {
@@ -192,6 +196,7 @@ void setCurrentPlayer(int currentPlayer) {
 
   CURRENT_PLAYER = currentPlayer;
   Blynk.virtualWrite(V30, player[currentPlayer].name);
+  printPlayer();
 
   if ( strcmp(player[currentPlayer].name, "shanko") == 0 )
   {
@@ -210,6 +215,14 @@ void setCurrentPlayer(int currentPlayer) {
     //light seat
     setSeat(CURRENT_SEAT, CURRENT_END);
   } else if ( strcmp(player[currentPlayer].name, "kae") == 0 )
+  {
+    clearCurrent(CURRENT_SEAT, CURRENT_END);
+    //set this seat as current
+    CURRENT_SEAT = SEAT_FOUR;
+    CURRENT_END = END_FOUR;
+    //light seat
+    setSeat(CURRENT_SEAT, CURRENT_END);
+  } else if ( strcmp(player[currentPlayer].name, "owl") == 0 )
   {
     clearCurrent(CURRENT_SEAT, CURRENT_END);
     //set this seat as current
@@ -254,6 +267,7 @@ void setNextPlayer(int nextPlayer) {
 
   NEXT_PLAYER = nextPlayer;
   Blynk.virtualWrite(V30, player[nextPlayer].name);
+  printNextPlayer();
 
   if ( strcmp(player[nextPlayer].name, "shanko") == 0 )
   {
@@ -272,6 +286,14 @@ void setNextPlayer(int nextPlayer) {
     //light seat
     setSeatNext(NEXT_SEAT, NEXT_END);
   } else if ( strcmp(player[nextPlayer].name, "kae") == 0 )
+  {
+    clearCurrent(NEXT_SEAT, NEXT_END);
+    //set this seat as current
+    NEXT_SEAT = SEAT_FOUR;
+    NEXT_END = END_FOUR;
+    //light seat
+    setSeatNext(NEXT_SEAT, NEXT_END);
+  } else if ( strcmp(player[nextPlayer].name, "owl") == 0 )
   {
     clearCurrent(NEXT_SEAT, NEXT_END);
     //set this seat as current
@@ -317,7 +339,7 @@ void setNextPlayer(int nextPlayer) {
 void printValues()
 {
   //TODO: only show players in array
-  char values[60] = "Values: ";
+  char values[64] = "Values: ";
   char intvalue[5];
   sprintf( intvalue, "%d,", player[0].value);
   strcat( values, intvalue);
@@ -337,8 +359,13 @@ void printValues()
   strcat( values, intvalue);
   sprintf( intvalue, "%d,", player[8].value);
   strcat( values, intvalue);
-  sprintf( intvalue, "%d", player[9].value);
+  sprintf( intvalue, "%d,", player[9].value);
   strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[10].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d", player[11].value);
+  strcat( values, intvalue);
+
 
   Blynk.virtualWrite(V30, values);
 }
@@ -347,7 +374,7 @@ void printValues()
 void printNames()
 {
   //TODO: only show players in array
-  char test[100] = "Names: ";
+  char test[120] = "Names: ";
   strcat(test, player[0].name);
   strcat(test, player[1].name);
   strcat(test, player[2].name);
@@ -358,7 +385,8 @@ void printNames()
   strcat(test, player[7].name);
   strcat(test, player[8].name);
   strcat(test, player[9].name);
-
+  strcat(test, player[10].name);
+  strcat(test, player[11].name);
 
   Blynk.virtualWrite(V30, test);
 }
@@ -366,7 +394,7 @@ void printNames()
 void getPlayers() {
 
   //TODO: replace with LOOP
-  char values[60] = "";
+  char values[64] = "";
   char intvalue[5];
   sprintf( intvalue, "%d,", player[0].value);
   strcat( values, intvalue);
@@ -386,11 +414,49 @@ void getPlayers() {
   strcat( values, intvalue);
   sprintf( intvalue, "%d,", player[8].value);
   strcat( values, intvalue);
-  sprintf( intvalue, "%d", player[9].value);
+  sprintf( intvalue, "%d,", player[9].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[10].value);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d", player[11].value);
   strcat( values, intvalue);
 
   Blynk.virtualWrite(V4, values);
 }
+
+void getEnabled() {
+
+  //TODO: replace with LOOP
+  char values[64] = "";
+  char intvalue[5];
+  sprintf( intvalue, "%d,", player[0].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[1].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[2].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[3].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[4].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[5].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[6].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[7].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[8].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[9].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d,", player[10].enabled);
+  strcat( values, intvalue);
+  sprintf( intvalue, "%d", player[11].enabled);
+  strcat( values, intvalue);
+
+  Blynk.virtualWrite(V15, values);
+}
+
 
 /*Create struct array of Player from active players
   void createPlayerList() {
@@ -405,12 +471,29 @@ void getPlayers() {
   }
   }*/
 
-int findNextActivePlayer(int nextPlayer) {
-  int length = sizeof(player) / sizeof(player[0]);
+void printPlayer() {
+  char printout[18];
+  sprintf(printout, "CurrentPlayer: %d", CURRENT_PLAYER);
+  Blynk.virtualWrite(V30, printout);
+}
 
-  for ( int i = 0; i < length; i++) {
-    if ( player[nextPlayer % length].enabled != 0 )
-      return nextPlayer % length;
+void printNextPlayer() {
+  char printout[18];
+  sprintf(printout, "NextPlayer: %d", NEXT_PLAYER);
+  Blynk.virtualWrite(V30, printout);
+}
+
+int findNextActivePlayer(int nextPlayer) {
+  int len = sizeof(player) / sizeof(player[0]);
+  char printout[20];
+  int pos = nextPlayer%len;
+  
+  for ( int i = 0; i < len; i++) {
+    if ( player[pos].enabled != 0 ) {
+      sprintf(printout, "i = %d mod = %d", i, pos );
+      Blynk.virtualWrite(V30, printout);
+      return pos; 
+    }
   }
   return 0;
 }
@@ -419,7 +502,7 @@ int findNextActivePlayer(int nextPlayer) {
 BLYNK_WRITE(V20)
 {
   if (param.asInt() == 1) {
-    printValues();
+    //printValues();
     CURRENT_SEAT = 100;
     NEXT_SEAT = 100;
     clearAll();
@@ -430,20 +513,59 @@ BLYNK_WRITE(V20)
 
     //TODO: can I sync all Virtual pins now?
 
-    qsort(player, 10, sizeof(Player),
+    qsort(player, 12, sizeof(Player),
           compare);
 
     setCurrentPlayer(findNextActivePlayer(0));
     setNextPlayer(findNextActivePlayer(CURRENT_PLAYER + 1));
+    //printValues();
+  }
+}
+
+BLYNK_WRITE(V5)
+{
+  if (param.asInt() == 1) {
     printValues();
+    CURRENT_SEAT = 100;
+    NEXT_SEAT = 100;
+    clearAll();
+
+    strcpy(player[0].name, "shanko");
+    strcpy(player[1].name, "sael");
+    strcpy(player[2].name, "kae");
+    strcpy(player[3].name, "tree");
+    strcpy(player[4].name, "gith");
+    strcpy(player[5].name, "otadus");
+    strcpy(player[6].name, "monster1");
+    strcpy(player[7].name, "monster2");
+    strcpy(player[8].name, "monster3");
+    strcpy(player[9].name, "monster4");
+    strcpy(player[10].name, "owl");
+    strcpy(player[11].name, "monster5");
+
+    player[0].value = 0;
+    player[1].value = 0;
+    player[2].value = 0;
+    player[3].value = 0;
+    player[4].value = 0;
+    player[5].value = 0;
+    player[6].value = 0;
+    player[7].value = 0;
+    player[8].value = 0;
+    player[9].value = 0;
+    player[10].value = 0;
+    player[11].value = 0; 
+    Blynk.syncVirtual(V6);
+    printValues();
+    Blynk.virtualWrite(V30, "resetting");
   }
 }
 
 BLYNK_WRITE(V31)
 {
   if (param.asInt() == 1) {
-    setCurrentPlayer(findNextActivePlayer(CURRENT_PLAYER));
-    setNextPlayer(findNextActivePlayer(CURRENT_PLAYER + 1));
+    setCurrentPlayer(NEXT_PLAYER);
+    setNextPlayer(findNextActivePlayer(NEXT_PLAYER + 1));
     /*if ( CURRENT_PLAYER == 9 )
       {
       setCurrentPlayer(0);
@@ -459,41 +581,6 @@ BLYNK_WRITE(V31)
   }
 }
 
-BLYNK_WRITE(V40)
-{
-  if (param.asInt() == 1) {
-    Blynk.virtualWrite(V30, "resetting");
-    CURRENT_SEAT = 100;
-    NEXT_SEAT = 100;
-    clearAll();
-
-    strcpy(player[0].name, "shanko");
-    strcpy(player[1].name, "sael");
-    strcpy(player[2].name, "kae");
-    strcpy(player[3].name, "tree");
-    strcpy(player[4].name, "gith");
-    strcpy(player[5].name, "otadus");
-    strcpy(player[6].name, "monster1");
-    strcpy(player[7].name, "monster2");
-    strcpy(player[8].name, "monster3");
-    strcpy(player[9].name, "monster4");
-
-    player[0].value = 0;
-    player[1].value = 0;
-    player[2].value = 0;
-    player[3].value = 0;
-    player[4].value = 0;
-    player[5].value = 0;
-    player[6].value = 0;
-    player[7].value = 0;
-    player[8].value = 0;
-    player[9].value = 0;
-
-    printValues();
-
-  }
-}
-
 
 /*********************************************
    PLAYER TOGGLES
@@ -501,65 +588,123 @@ BLYNK_WRITE(V40)
 
 
 //TODO: update to loop through virtual pins
-BLYNK_WRITE(V50)
+BLYNK_WRITE(V6)
 {
   int i = param.asInt();
   player[0].enabled = i;
+  Blynk.virtualWrite(V30, "0 enabled");
 }
 
-BLYNK_WRITE(V51)
+BLYNK_WRITE(V14)
 {
   int i = param.asInt();
   player[1].enabled = i;
+  if(i)
+    Blynk.virtualWrite(V30, "1 enabled");
+  else
+    Blynk.virtualWrite(V30, "1 disabled");
 }
 
-BLYNK_WRITE(V52)
+BLYNK_WRITE(V13)
 {
   int i = param.asInt();
   player[2].enabled = i;
+  if(i)
+    Blynk.virtualWrite(V30, "2 enabled");
+  else
+    Blynk.virtualWrite(V30, "2 disabled");
 }
 
-BLYNK_WRITE(V53)
+BLYNK_WRITE(V12)
 {
   int i = param.asInt();
   player[3].enabled = i;
+  if(i)
+    Blynk.virtualWrite(V30, "3 enabled");
+  else
+    Blynk.virtualWrite(V30, "3 disabled");
 }
 
-BLYNK_WRITE(V54)
+BLYNK_WRITE(V11)
 {
   int i = param.asInt();
   player[4].enabled = i;
+  if(i)
+    Blynk.virtualWrite(V30, "4 enabled");
+  else
+    Blynk.virtualWrite(V30, "4 disabled");
 }
 
-BLYNK_WRITE(V55)
+BLYNK_WRITE(V10)
 {
   int i = param.asInt();
   player[5].enabled = i;
+  if(i)
+    Blynk.virtualWrite(V30, "5 enabled");
+  else
+    Blynk.virtualWrite(V30, "5 disabled");
 }
 
-BLYNK_WRITE(V56)
+BLYNK_WRITE(V9)
 {
   int i = param.asInt();
   player[6].enabled = i;
+  if(i)
+    Blynk.virtualWrite(V30, "6 enabled");
+  else
+    Blynk.virtualWrite(V30, "6 disabled");
 }
 
-BLYNK_WRITE(V57)
+BLYNK_WRITE(V8)
 {
   int i = param.asInt();
   player[7].enabled = i;
+  if(i)
+    Blynk.virtualWrite(V30, "7 enabled");
+  else
+    Blynk.virtualWrite(V30, "7 disabled");
 }
 
-BLYNK_WRITE(V58)
+BLYNK_WRITE(V7)
 {
   int i = param.asInt();
   player[8].enabled = i;
+  if(i)
+    Blynk.virtualWrite(V30, "8 enabled");
+  else
+    Blynk.virtualWrite(V30, "8 disabled");
 }
 
-BLYNK_WRITE(V59)
+BLYNK_WRITE(V3)
 {
   int i = param.asInt();
   player[9].enabled = i;
+if(i)
+    Blynk.virtualWrite(V30, "9 enabled");
+  else
+    Blynk.virtualWrite(V30, "9 disabled");
 }
+
+BLYNK_WRITE(V2)
+{
+  int i = param.asInt();
+  player[10].enabled = i;
+if(i)
+    Blynk.virtualWrite(V30, "10 enabled");
+  else
+    Blynk.virtualWrite(V30, "10 disabled");
+}
+
+BLYNK_WRITE(V1)
+{
+  int i = param.asInt();
+  player[11].enabled = i;
+  if(i)
+    Blynk.virtualWrite(V30, "11 enabled");
+  else
+    Blynk.virtualWrite(V30, "11 disabled");
+}
+
 
 //TODO: Read all the player values BLYNK_READ
 
@@ -630,16 +775,29 @@ BLYNK_WRITE(V29)
   Blynk.virtualWrite(V30, "Monster3");
 }
 
-BLYNK_WRITE(V32)
+BLYNK_WRITE(V19)
 {
   int i = param.asInt();
   player[9].value = i;
   Blynk.virtualWrite(V30, "Monster4");
 }
 
+BLYNK_WRITE(V18)
+{
+  int i = param.asInt();
+  player[10].value = i;
+  Blynk.virtualWrite(V30, "Owl");
+}
+
+BLYNK_WRITE(V17)
+{
+  int i = param.asInt();
+  player[11].value = i;
+  Blynk.virtualWrite(V30, "Monster5");
+}
+
 void loop()
 {
   Blynk.run();
   timer.run();
-  //getEnabled.run();
 }
